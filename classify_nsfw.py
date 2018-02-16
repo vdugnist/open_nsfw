@@ -84,10 +84,10 @@ def main(argv):
     pycaffe_dir = os.path.dirname(__file__)
 
     parser = argparse.ArgumentParser()
-    # Required arguments: input file.
+    # Required arguments: input folder.
     parser.add_argument(
-        "input_file",
-        help="Path to the input image file"
+        "input_folder",
+        help="Path to the input image folder"
     )
 
     # Optional arguments.
@@ -101,7 +101,6 @@ def main(argv):
     )
 
     args = parser.parse_args()
-    image_data = open(args.input_file).read()
 
     # Pre-load caffe model.
     nsfw_net = caffe.Net(args.model_def,  # pylint: disable=invalid-name
@@ -115,13 +114,15 @@ def main(argv):
     caffe_transformer.set_raw_scale('data', 255)  # rescale from [0, 1] to [0, 255]
     caffe_transformer.set_channel_swap('data', (2, 1, 0))  # swap channels from RGB to BGR
 
-    # Classify.
-    scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
+    for input_file in glob.glob(args.input_folder + '/**/*'):
+        image_data = open(input_file).read()
 
-    # Scores is the array containing SFW / NSFW image probabilities
-    # scores[1] indicates the NSFW probability
-    print "NSFW score:  " , scores[1]
+        # Classify.
+        scores = caffe_preprocess_and_compute(image_data, caffe_transformer=caffe_transformer, caffe_net=nsfw_net, output_layers=['prob'])
 
+        # Scores is the array containing SFW / NSFW image probabilities
+        # scores[1] indicates the NSFW probability
+        print('NSFW score:' + str(scores[1]) + '\t' + 'path:' + input_file)
 
 
 if __name__ == '__main__':
